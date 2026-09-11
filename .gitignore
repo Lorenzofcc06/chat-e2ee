@@ -1,0 +1,33 @@
+# Ambientes Virtuais
+venv/
+env/
+.venv/
+
+# Caches do Python e Testes
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Chaves Privadas E2EE (NUNCA comitar chaves privadas)
+.keys/
+client/.keys/
+*.pem
+
+# Logs de Auditoria gerados em tempo de execução
+logs/
+backend/logs/
+*.log
+
+# Bancos de dados locais / temporários
+*.sqlite
+*.sqlite3
+*.db
+
+# Variáveis de ambiente com credenciais reais
+.env
+backend/.env
+
+# Configurações de IDE
+.vscode/
+.idea/
