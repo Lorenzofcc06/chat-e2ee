@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+import uuid
 
 # Adiciona backend e client ao sys.path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +22,12 @@ def test_health():
     assert response.json()["status"] == "online"
 
 def test_full_e2ee_and_security_flow():
-    print("\n--- 1. GERAÇÃO DE CHAVES LOCAIS ---")
+    # Gera identificadores únicos para permitir múltiplas execuções idempotentes
+    run_id = uuid.uuid4().hex[:6]
+    user_alice = f"alice_{run_id}"
+    user_bob = f"bob_{run_id}"
+
+    print(f"\n--- 1. GERAÇÃO DE CHAVES LOCAIS ({user_alice} & {user_bob}) ---")
     alice_priv, alice_pub = E2EEManager.gerar_par_chaves()
     bob_priv, bob_pub = E2EEManager.gerar_par_chaves()
     assert "BEGIN PUBLIC KEY" in alice_pub
@@ -29,25 +35,24 @@ def test_full_e2ee_and_security_flow():
 
     print("--- 2. REGISTRO DE USUÁRIOS NO BACKEND COM MENOR PRIVILÉGIO ---")
     res_reg_alice = client.post("/api/v1/auth/register", json={
-        "nome_usuario": "alice_test",
+        "nome_usuario": user_alice,
         "senha": "AlicePassword123!",
         "chave_publica": alice_pub,
         "papel": "Usuario"
     })
-    # Se já existir de execução anterior, aceita ou valida
-    assert res_reg_alice.status_code in [201, 400]
+    assert res_reg_alice.status_code == 201
 
     res_reg_bob = client.post("/api/v1/auth/register", json={
-        "nome_usuario": "bob_test",
+        "nome_usuario": user_bob,
         "senha": "BobPassword123!",
         "chave_publica": bob_pub,
         "papel": "Usuario"
     })
-    assert res_reg_bob.status_code in [201, 400]
+    assert res_reg_bob.status_code == 201
 
     print("--- 3. AUTENTICAÇÃO E EMISSÃO DE JWT ---")
     res_login_alice = client.post("/api/v1/auth/login", json={
-        "nome_usuario": "alice_test",
+        "nome_usuario": user_alice,
         "senha": "AlicePassword123!"
     })
     assert res_login_alice.status_code == 200
@@ -55,7 +60,7 @@ def test_full_e2ee_and_security_flow():
     assert alice_token is not None
 
     res_login_bob = client.post("/api/v1/auth/login", json={
-        "nome_usuario": "bob_test",
+        "nome_usuario": user_bob,
         "senha": "BobPassword123!"
     })
     assert res_login_bob.status_code == 200
@@ -63,7 +68,7 @@ def test_full_e2ee_and_security_flow():
 
     print("--- 4. DESCOBERTA E TROCA DE CHAVES ---")
     headers_alice = {"Authorization": f"Bearer {alice_token}"}
-    res_key = client.get("/api/v1/users/bob_test/public-key", headers=headers_alice)
+    res_key = client.get(f"/api/v1/users/{user_bob}/public-key", headers=headers_alice)
     assert res_key.status_code == 200
     bob_pub_from_server = res_key.json()["chave_publica"]
     assert bob_pub_from_server == bob_pub
@@ -96,11 +101,10 @@ def test_full_e2ee_and_security_flow():
     print(f"  -> Trilha de auditoria 5W ativa com {len(logs)} eventos registrados!")
 
     print("--- 7. DEFESA CONTRA EXAUSTÃO DE RECURSOS (DOS) ---")
-    # Dispara tentativas de login inválido para atingir o rate limiter
     hit_429 = False
     for i in range(15):
         r = client.post("/api/v1/auth/login", json={
-            "nome_usuario": "atacante_dos",
+            "nome_usuario": f"atacante_{run_id}",
             "senha": "wrongpassword"
         })
         if r.status_code == 429:
@@ -113,15 +117,14 @@ def test_full_e2ee_and_security_flow():
     # Conexão simultânea de Alice e Bob no WebSocket
     with client.websocket_connect(f"/ws?token={bob_token}") as ws_bob:
         with client.websocket_connect(f"/ws?token={alice_token}") as ws_alice:
-            # Alice cifra uma mensagem confidencial para Bob
             texto_original = "Olá Bob! Esta é uma mensagem ultra secreta E2EE protegida por RSA e AES."
             pacote_cifrado = E2EEManager.cifrar_mensagem(
                 mensagem_texto=texto_original,
                 chave_publica_destinatario_pem=bob_pub,
                 chave_privada_remetente_pem=alice_priv
             )
-            pacote_cifrado["id_remetente"] = "alice_test"
-            pacote_cifrado["id_destinatario"] = "bob_test"
+            pacote_cifrado["id_remetente"] = user_alice
+            pacote_cifrado["id_destinatario"] = user_bob
             pacote_cifrado["data_hora"] = "2026-09-11T20:00:00Z"
 
             # Alice envia via WebSocket
