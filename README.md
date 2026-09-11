@@ -109,9 +109,17 @@ No terminal do cliente:
 
 ## 🧪 Como Rodar os Testes Automatizados
 
-Com o ambiente virtual ativado na pasta `backend`:
+Você pode rodar os testes a partir da pasta raiz do projeto ou de dentro da pasta `backend`:
+
+**Opção A: A partir da raiz do projeto (`chat-e2ee`):**
 ```powershell
-python tests/test_full_suite.py
+.\backend\venv\Scripts\python.exe backend/tests/test_full_suite.py
+```
+
+**Opção B: De dentro da pasta `backend`:**
+```powershell
+cd backend
+.\venv\Scripts\python.exe tests/test_full_suite.py
 ```
 O teste valida automaticamente:
 - Geração de chaves RSA

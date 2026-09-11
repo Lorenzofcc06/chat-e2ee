@@ -1,3 +1,4 @@
+import os
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -16,7 +17,7 @@ class Settings(BaseSettings):
     max_payload_size_bytes: int = 65536  # 64 KB
 
     class Config:
-        env_file = ".env"
+        env_file = [".env", "backend/.env"]
         extra = "ignore"
 
 settings = Settings()
