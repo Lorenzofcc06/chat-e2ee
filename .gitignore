@@ -31,3 +31,5 @@ backend/.env
 # Configurações de IDE
 .vscode/
 .idea/
+
+seguranca_bd.py
