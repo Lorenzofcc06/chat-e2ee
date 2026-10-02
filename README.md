@@ -36,9 +36,11 @@ Aplicação completa de troca de mensagens em tempo real (análoga ao WhatsApp) 
    - Prevenção total contra SQL Injection via SQLAlchemy ORM com consultas parametrizadas.
    - Diretrizes de restrição à rede local (`localhost` e `pg_hba.conf`).
 
-5. **Defesa contra Exaustão de Recursos (DoS)**:
+5. **Defesa contra Exaustão de Recursos (DoS) e Vazamentos**:
    - Rate limiting por IP (proteção contra força bruta em `/auth/login` e flood em endpoints e WebSocket).
    - Limite estrito de tamanho de payload (máximo de 64KB por mensagem).
+   - **Information Disclosure (Vazamento de Dados)**: Ocultação de payload em erros 422 para não gravar senhas expostas em logs corporativos/WAF.
+   - **BOLA e Mass Assignment**: Validação rígida nos Schemas e rotas impedem escalar privilégios (Mass Assignment) ou acessar chaves e recursos de usuários não autorizados (BOLA).
 
 ---
 
@@ -104,6 +106,8 @@ No terminal do cliente:
 3. No outro terminal, faça o mesmo para um segundo usuário.
 4. Escolha **1. Iniciar conversa com um contato** e envie mensagens em tempo real!
    - As mensagens trafegam 100% cifradas pelo backend e são descriptografadas apenas no terminal de destino.
+5. **Menu do Administrador**:
+   - Se você fizer login com a conta `admin`, verá opções exclusivas (`4. Deletar` e `5. Banir/Reativar`) para gestão de usuários direto pelo terminal!
 
 ---
 
