@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from .core.logger import log, log_5w
 from .core.config import settings
 from .core.security import decodificar_token
@@ -27,6 +28,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Filtro de Segurança contra Information Disclosure em erros de validação
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = exc.errors()
+    cleaned_errors = []
+    for error in errors:
+        error_dict = dict(error)
+        # Oculta a senha digitada errada para evitar que ela fique nos logs da API/Proxy
+        error_dict.pop("input", None)
+        error_dict.pop("url", None)
+        cleaned_errors.append(error_dict)
+        
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": cleaned_errors}
+    )
 
 # Middleware de Defesa contra DoS (Payload Size) e Auditoria 5W de Requisições HTTP
 @app.middleware("http")

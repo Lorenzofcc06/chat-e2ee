@@ -59,9 +59,9 @@ class ChatClient:
         senha = input("Senha: ").strip()
 
         try:
-            resp = requests.post(f"{SERVER_HTTP_URL}/api/v1/auth/login", json={
-                "nome_usuario": username,
-                "senha": senha
+            resp = requests.post(f"{SERVER_HTTP_URL}/api/v1/auth/login", data={
+                "username": username,
+                "password": senha
             }, timeout=10)
             if resp.status_code != 200:
                 print(f"Falha de autenticação ({resp.status_code}): {resp.json().get('detail')}")
@@ -95,9 +95,8 @@ class ChatClient:
                 usuarios = resp.json()
                 print("\n--- CONTATOS DISPONÍVEIS ---")
                 for u in usuarios:
-                    status_str = "Ativo" if u["ativo"] else "Inativo"
                     eu = " (você)" if u["nome_usuario"] == self.username else ""
-                    print(f"- {u['nome_usuario']} [{u['papel']}]{eu} - Status: {status_str}")
+                    print(f"- {u['nome_usuario']}{eu}")
             else:
                 print(f"Erro ao listar usuários: {resp.text}")
         except Exception as e:
@@ -115,6 +114,77 @@ class ChatClient:
             return pub_key
         else:
             raise ValueError(f"Não foi possível obter a chave pública de '{destinatario}': {resp.text}")
+
+    def listar_usuarios_admin(self):
+        headers = {"Authorization": f"Bearer {self.token}"}
+        try:
+            resp = requests.get(f"{SERVER_HTTP_URL}/api/v1/admin/users", headers=headers, timeout=10)
+            if resp.status_code == 200:
+                usuarios = resp.json()
+                print("\n--- BASE COMPLETA (VISÃO DO ADMIN) ---")
+                for u in usuarios:
+                    status_str = "Ativo" if u["ativo"] else "Banido/Desativado"
+                    eu = " (você)" if u["nome_usuario"] == self.username else ""
+                    print(f"[{u['id']}] - {u['nome_usuario']} [{u['papel']}]{eu} - Status: {status_str}")
+            else:
+                print(f"Erro ao listar usuários do admin: {resp.text}")
+        except Exception as e:
+            print(f"Erro de conexão: {e}")
+
+    def deletar_usuario(self):
+        if self.role != "Administrador":
+            print("Acesso Negado: Apenas Administradores podem deletar usuários.")
+            return
+
+        self.listar_usuarios_admin()
+        user_id_str = input("\nDigite o ID ou o Nome do usuário que deseja deletar permanentemente (ou Enter para cancelar): ").strip()
+        if not user_id_str:
+            return
+
+        headers = {"Authorization": f"Bearer {self.token}"}
+        try:
+            resp = requests.delete(f"{SERVER_HTTP_URL}/api/v1/admin/users/{user_id_str}", headers=headers, timeout=10)
+            if resp.status_code == 204 or resp.status_code == 200:
+                print(f"Sucesso: Usuário '{user_id_str}' foi deletado.")
+            else:
+                print(f"Erro ao deletar: {resp.status_code} - {resp.json().get('detail')}")
+        except Exception as e:
+            print(f"Erro de conexão ao tentar deletar: {e}")
+
+    def alternar_status_usuario(self):
+        if self.role != "Administrador":
+            print("Acesso Negado.")
+            return
+
+        self.listar_usuarios_admin()
+        user_id_str = input("\nDigite o ID ou Nome do usuário que deseja Banir/Reativar (ou Enter para cancelar): ").strip()
+        if not user_id_str:
+            return
+
+        # Pergunta qual o novo status
+        novo_status = input("Deseja Ativar (1) ou Banir/Desativar (2)? ").strip()
+        if novo_status == "1":
+            ativo = True
+        elif novo_status == "2":
+            ativo = False
+        else:
+            print("Opção inválida.")
+            return
+
+        headers = {"Authorization": f"Bearer {self.token}"}
+        try:
+            resp = requests.patch(
+                f"{SERVER_HTTP_URL}/api/v1/admin/users/{user_id_str}",
+                headers=headers,
+                json={"ativo": ativo},
+                timeout=10
+            )
+            if resp.status_code == 200:
+                print(f"Sucesso: Status do usuário atualizado.")
+            else:
+                print(f"Erro: {resp.status_code} - {resp.json().get('detail')}")
+        except Exception as e:
+            print(f"Erro de conexão: {e}")
 
     async def _ouvinte_mensagens(self, ws):
         """Loop assíncrono que escuta mensagens cifradas recebidas via WebSocket e as decifra."""
@@ -236,6 +306,10 @@ def main():
             print("1. Iniciar conversa com um contato (Chat E2EE)")
             print("2. Listar contatos / usuários")
             print("3. Logout")
+            if client.role == "Administrador":
+                print("4. Deletar usuário (Hard Delete)")
+                print("5. Banir/Reativar usuário (Soft Delete)")
+                
             opcao = input("\nEscolha uma opção: ").strip()
 
             if opcao == "1":
@@ -252,6 +326,10 @@ def main():
                 client.token = None
                 client.username = None
                 print("Logout efetuado com sucesso.")
+            elif opcao == "4" and client.role == "Administrador":
+                client.deletar_usuario()
+            elif opcao == "5" and client.role == "Administrador":
+                client.alternar_status_usuario()
             else:
                 print("Opção inválida.")
 
