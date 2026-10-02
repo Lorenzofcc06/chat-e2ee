@@ -1,9 +1,9 @@
 name: Pipeline DevSecOps - Aula Pratica
 
-# A esteira roda sempre que um Pull Request for aberto para a branch dev/lorenzo
+# A esteira roda sempre que um Pull Request for aberto para a branch main
 on:
   pull_request:
-    branches: [ "dev/lorenzo" ]
+    branches: [ "main" ]
 
 jobs:
   auditoria_seguranca:
