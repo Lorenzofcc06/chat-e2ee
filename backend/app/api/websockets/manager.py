@@ -20,8 +20,8 @@ class ConnectionManager:
         if username in self.active_connections:
             try:
                 await self.active_connections[username].close(code=1000, reason="Nova sessão conectada")
-            except Exception:
-                pass
+            except Exception as e:
+                logging.warning(f"Erro ao fechar conexão websocket antiga de {username}: {str(e)}")
 
         self.active_connections[username] = websocket
         self.message_history[username] = []

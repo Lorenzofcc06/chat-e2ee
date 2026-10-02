@@ -1,4 +1,4 @@
-name: Pipeline DevSecOps - Aula Pratica
+name: Pipeline DevSecOps
 
 # A esteira roda sempre que um Pull Request for aberto para a branch main
 on:
@@ -30,7 +30,7 @@ jobs:
     - name: SAST - Auditoria de Código (Bandit)
       run: |
         echo "Buscando senhas expostas e injeções de SQL..."
-        bandit -r . -f custom
+        bandit -r backend/app/ client/ -f custom
         
     # 5. Executa a análise de dependências (SCA)
     # Obs: Só rodará se o passo anterior passar

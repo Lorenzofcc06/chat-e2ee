@@ -44,7 +44,7 @@ class ChatClient:
                 "senha": senha,
                 "chave_publica": pub_pem,
                 "papel": "Usuario"
-            })
+            }, timeout=10)
             if resp.status_code == 201:
                 print("  -> Usuário registrado com sucesso no backend!")
                 print("Agora você já pode fazer o Login.")
@@ -62,7 +62,7 @@ class ChatClient:
             resp = requests.post(f"{SERVER_HTTP_URL}/api/v1/auth/login", json={
                 "nome_usuario": username,
                 "senha": senha
-            })
+            }, timeout=10)
             if resp.status_code != 200:
                 print(f"Falha de autenticação ({resp.status_code}): {resp.json().get('detail')}")
                 return False
@@ -90,7 +90,7 @@ class ChatClient:
     def listar_contatos(self):
         headers = {"Authorization": f"Bearer {self.token}"}
         try:
-            resp = requests.get(f"{SERVER_HTTP_URL}/api/v1/users", headers=headers)
+            resp = requests.get(f"{SERVER_HTTP_URL}/api/v1/users", headers=headers, timeout=10)
             if resp.status_code == 200:
                 usuarios = resp.json()
                 print("\n--- CONTATOS DISPONÍVEIS ---")
@@ -108,7 +108,7 @@ class ChatClient:
             return self.public_keys_cache[destinatario]
 
         headers = {"Authorization": f"Bearer {self.token}"}
-        resp = requests.get(f"{SERVER_HTTP_URL}/api/v1/users/{destinatario}/public-key", headers=headers)
+        resp = requests.get(f"{SERVER_HTTP_URL}/api/v1/users/{destinatario}/public-key", headers=headers, timeout=10)
         if resp.status_code == 200:
             pub_key = resp.json()["chave_publica"]
             self.public_keys_cache[destinatario] = pub_key

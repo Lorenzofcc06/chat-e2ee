@@ -22,9 +22,9 @@ def sync_schema():
             conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW();"))
             conn.execute(text("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT NOW();"))
             conn.commit()
-        except Exception:
+        except Exception as e:
             # Em SQLite ou caso já existam as colunas, prossegue
-            pass
+            logging.info(f"Migração manual de esquema ignorada (esperado em SQLite ou tabelas já atualizadas): {e}")
 
 def init_db():
     """Inicializa as tabelas do banco de dados e cria o Administrador padrão caso não exista."""
