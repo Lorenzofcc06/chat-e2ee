@@ -11,7 +11,6 @@ class UsuarioRegistroRequest(BaseModel):
     nome_usuario: str = Field(..., min_length=3, max_length=50)
     senha: str = Field(..., min_length=6, max_length=128)
     chave_publica: str = Field(..., description="Chave pública RSA em formato PEM")
-    papel: Optional[Papel] = Papel.USUARIO
 
 class UsuarioLoginRequest(BaseModel):
     nome_usuario: str

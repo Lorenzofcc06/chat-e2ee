@@ -33,7 +33,7 @@ class UserService:
             nome_usuario=req.nome_usuario,
             hash_senha=senha_cifrada,
             chave_publica=req.chave_publica,
-            papel=req.papel.value if req.papel else Papel.USUARIO.value,
+            papel=Papel.USUARIO.value,
             ativo=True
         )
 
