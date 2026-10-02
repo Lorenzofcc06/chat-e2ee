@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     app_name: str = "Chat E2EE"
     debug: bool = True
-    database_url: str = "postgresql://chat_api_user:senha_forte_api_123@localhost:5432/chat_e2ee_db"
+    database_url: str = "postgresql+psycopg2://chat_api_user:senha_forte_api_123@localhost:5432/chat_e2ee_db"
     
     # Segurança e Autenticação JWT
     secret_key: str = "super_secret_e2ee_token_key_change_in_production_987654321"
